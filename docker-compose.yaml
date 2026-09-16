@@ -38,7 +38,7 @@ services:
       rm -rf /var/lib/postgresql/18/docker/* &&
       pg_basebackup -h primary -U repuser -D /var/lib/postgres/18/data -Fp -Xs -R &&
       chown -R postgres:postgres /var/lib/postgres &&
-      exec docker-entrypoint.sh postgres -D /var/lib/postgres/18/data &&
+      su postgres -c 'pg_ctl -D /var/lib/postgres/18/data start' &&
       tail -f /dev/null
       "
 
@@ -98,3 +98,6 @@ volumes:
 
     # postgres -c hba_file=/etc/postgresql/pg_hba.conf -D /var/lib/postgresql/data
     # command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf", "-D", "/var/lib/postgresql/data" ]
+    #
+    #
+      # &&
