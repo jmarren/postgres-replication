@@ -1,0 +1,45 @@
+
+services:
+  primary:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pgdata_primary:/var/lib/postgresql/adventureworks 
+      - ./postgresDBSamples/adventureworks/install.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init.sh:/docker-entrypoint-initdb.d/init.sh
+      - ./postgresDBSamples/adventureworks/data:/data
+    ports:
+      - 5438:5432
+    networks:
+      - backend
+  pgadmin:
+    image: dpage/pgadmin4:9.8
+    ports:
+      - 5050:80
+    environment:
+      # Required by pgAdmin
+      PGADMIN_DEFAULT_EMAIL: demo@example.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+
+      # Don't require the user to login
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_REPLACE_SERVERS_ON_STARTUP: "True" # Forces reload on restart
+      # Don't require a "master" password after logging in
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json
+    depends_on:
+      - primary
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  pgdata_primary:
+  pgdata:
+  pgadmin-data:
+

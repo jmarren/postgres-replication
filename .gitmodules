@@ -1,0 +1,3 @@
+[submodule "postgresDBSamples"]
+	path = postgresDBSamples
+	url = https://github.com/morenoh149/postgresDBSamples.git
