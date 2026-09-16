@@ -9,10 +9,57 @@ services:
       - ./postgresDBSamples/adventureworks/install.sql:/docker-entrypoint-initdb.d/init.sql
       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
       - ./postgresDBSamples/adventureworks/data:/data
+      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
+    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
     ports:
       - 5438:5432
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      # test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - backend
+
+
+  replica-1:
+    image: postgres:18
+    environment:
+      POSTGRES_PASSWORD: password
+    volumes:
+      # - pgdata_primary:/var/lib/postgresql/adventureworks 
+      # - ./postgresDBSamples/adventureworks/install.sql:/docker-entrypoint-initdb.d/init.sql
+      # - ./init-replica.sh:/docker-entrypoint-initdb.d/init.sh
+      # - ./postgresDBSamples/adventureworks/data:/data
+      - ./pg_hba-replica.conf:/etc/postgresql/pg_hba.conf
+    command: >
+      bash -c "
+      rm -rf /var/lib/postgresql/18/docker/* &&
+      pg_basebackup -h primary -U repuser -D /var/lib/postgres/18/data -Fp -Xs -R &&
+      chown -R postgres:postgres /var/lib/postgres &&
+      exec docker-entrypoint.sh postgres -D /var/lib/postgres/18/data &&
+      tail -f /dev/null
+      "
+
+
+    depends_on:
+       primary:
+         condition: service_healthy # Instructs Compose to wait for the healthcheck to pass
+    ports:
+      - 5439:5432
+    networks:
+      - backend
+
+  load-balancer:
+    image: haproxy:3.4.4
+    ports:
+      - 8080:80
+    volumes:
+      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+
+
+
   pgadmin:
     image: dpage/pgadmin4:9.8
     ports:
@@ -43,3 +90,11 @@ volumes:
   pgdata:
   pgadmin-data:
 
+    # bash -c "rm -rf /var/lib/postgresql/18/docker/* &&
+    #   pg_basebackup -h primary -U repuser -D /var/lib/postgres/18/data -Fp -Xs -R &&
+    #   chown -R postgres:postgres /var/lib/postgres" &&
+    #   exec docker-entrypoint.sh postgres -D /var/lib/postgres/18/data
+    # "
+
+    # postgres -c hba_file=/etc/postgresql/pg_hba.conf -D /var/lib/postgresql/data
+    # command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf", "-D", "/var/lib/postgresql/data" ]
