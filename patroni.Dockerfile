@@ -1,6 +1,5 @@
 FROM postgres:18.6-alpine
 
-ARG NODE_ID
 
 RUN apk add python3 build-base py3-pip python3-dev build-base linux-headers libffi-dev py3-psycopg2 acl
 
@@ -10,8 +9,6 @@ RUN python3 -m venv .venv
 
 RUN pip install --break-system-packages patroni[etcd3,psycopg3] 
 
-
-# USER postgres
 
 CMD chmod +x /start.sh && /start.sh
 

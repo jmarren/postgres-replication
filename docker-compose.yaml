@@ -3,7 +3,7 @@ networks:
     # driver: host
 
 services:
-  patroni:
+  patroni-1:
     # environment:
     volumes:
       - ./start-patroni.sh:/start.sh
@@ -12,7 +12,7 @@ services:
       - ./certs/ca.crt:/etc/patroni/ssl/ca.crt
       - ./certs/etcd-node1.crt:/etc/patroni/ssl/etcd.crt
       - ./certs/etcd-node1.key:/etc/patroni/ssl/etcd.key
-      - ./certs/etcd-node1.pem:/etc/patroni/ssl/etcd.pem
+      # - ./certs/etcd-node1.pem:/etc/patroni/ssl/etcd.pem
       # postgres certs
       - ./certs/server.crt:/etc/patroni/ssl/server.crt
       - ./certs/server.key:/etc/patroni/ssl/server.key
@@ -21,15 +21,69 @@ services:
     # ports: 
       # - 5477:5432
     environment:
-      PATRONI_LOG_LEVEL: DEBUG
+      PATRONI_NAME: postgres-1
+      # PATRONI_LOG_LEVEL: DEBUG
       POSTGRES_PASSWORD: password
-      # PATRONI_CONFIG_FILE: /etc/patroni/config.yaml
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-1:5432
+      PATRONI_RESTAPI_CONNECT_ADDRESS: etcd-1:8008
+    build:
+      dockerfile: ./patroni.Dockerfile
+    networks:
+      - backend
+
+  patroni-2:
+    # environment:
+    volumes:
+      - ./start-patroni.sh:/start.sh
+      - ./patroni-config.yaml:/etc/patroni/config.yaml
+      # etcd certs
+      - ./certs/ca.crt:/etc/patroni/ssl/ca.crt
+      - ./certs/etcd-node2.crt:/etc/patroni/ssl/etcd.crt
+      - ./certs/etcd-node2.key:/etc/patroni/ssl/etcd.key
+      - ./certs/etcd-node2.pem:/etc/patroni/ssl/etcd.pem
+      # postgres certs
+      - ./certs/server.crt:/etc/patroni/ssl/server.crt
+      - ./certs/server.key:/etc/patroni/ssl/server.key
+      - ./certs/server.req:/etc/patroni/ssl/server.req
+      - ./certs/server.pem:/etc/patroni/ssl/server.pem
+    environment:
+      # PATRONI_LOG_LEVEL: DEBUG
+      PATRONI_NAME: postgres-2
+      POSTGRES_PASSWORD: password
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-2:5432
+      PATRONI_RESTAPI_CONNECT_ADDRESS: etcd-2:8008
+    build:
+      dockerfile: ./patroni.Dockerfile
+    networks:
+      - backend
+
+  patroni-3:
+    volumes:
+      - ./start-patroni.sh:/start.sh
+      - ./patroni-config.yaml:/etc/patroni/config.yaml
+      # etcd certs
+      - ./certs/ca.crt:/etc/patroni/ssl/ca.crt
+      - ./certs/etcd-node3.crt:/etc/patroni/ssl/etcd.crt
+      - ./certs/etcd-node3.key:/etc/patroni/ssl/etcd.key
+      - ./certs/etcd-node3.pem:/etc/patroni/ssl/etcd.pem
+      # postgres certs
+      - ./certs/server.crt:/etc/patroni/ssl/server.crt
+      - ./certs/server.key:/etc/patroni/ssl/server.key
+      - ./certs/server.req:/etc/patroni/ssl/server.req
+      - ./certs/server.pem:/etc/patroni/ssl/server.pem
+    environment:
+      # PATRONI_LOG_LEVEL: DEBUG
+      PATRONI_NAME: postgres-3
+      POSTGRES_PASSWORD: password
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-3:5432
+      PATRONI_RESTAPI_CONNECT_ADDRESS: etcd-3:8008
     build:
       dockerfile: ./patroni.Dockerfile
       args:
         NODE_ID: 1
     networks:
       - backend
+
 
 
 # COPY --chown=postgres:postgres --chmod=644 ./certs/server.crt /var/lib/postgresql/ssl/server.crt
