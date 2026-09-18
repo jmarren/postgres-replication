@@ -4,24 +4,26 @@ networks:
 
 services:
   patroni:
-
+    # environment:
     volumes:
+      - ./start-patroni.sh:/start.sh
       - ./patroni-config.yaml:/etc/patroni/config.yaml
       # etcd certs
       - ./certs/ca.crt:/etc/patroni/ssl/ca.crt
       - ./certs/etcd-node1.crt:/etc/patroni/ssl/etcd.crt
-      # - ./certs/etcd-node1.key:/etc/patroni/ssl/etcd.key
+      - ./certs/etcd-node1.key:/etc/patroni/ssl/etcd.key
       - ./certs/etcd-node1.pem:/etc/patroni/ssl/etcd.pem
       # postgres certs
       - ./certs/server.crt:/etc/patroni/ssl/server.crt
       - ./certs/server.key:/etc/patroni/ssl/server.key
       - ./certs/server.req:/etc/patroni/ssl/server.req
       - ./certs/server.pem:/etc/patroni/ssl/server.pem
-    ports: 
-      - 5477:5432
+    # ports: 
+      # - 5477:5432
     environment:
-      POSTGRES_PASSWORD: password
       PATRONI_LOG_LEVEL: DEBUG
+      POSTGRES_PASSWORD: password
+      # PATRONI_CONFIG_FILE: /etc/patroni/config.yaml
     build:
       dockerfile: ./patroni.Dockerfile
       args:
