@@ -24,7 +24,9 @@ services:
       PATRONI_NAME: postgres-1
       # PATRONI_LOG_LEVEL: DEBUG
       POSTGRES_PASSWORD: password
-      PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-1:5432
+      # PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-1:5432
+      # PATRONI_POSTGRESQL_CONNECT_ADDRESS: localhost:5432
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-1:5432
       PATRONI_RESTAPI_CONNECT_ADDRESS: etcd-1:8008
     build:
       dockerfile: ./patroni.Dockerfile
@@ -50,7 +52,9 @@ services:
       # PATRONI_LOG_LEVEL: DEBUG
       PATRONI_NAME: postgres-2
       POSTGRES_PASSWORD: password
-      PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-2:5432
+      # PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-2:5432
+      # PATRONI_POSTGRESQL_CONNECT_ADDRESS: localhost:5432
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-2:5432
       PATRONI_RESTAPI_CONNECT_ADDRESS: etcd-2:8008
     build:
       dockerfile: ./patroni.Dockerfile
@@ -75,7 +79,8 @@ services:
       # PATRONI_LOG_LEVEL: DEBUG
       PATRONI_NAME: postgres-3
       POSTGRES_PASSWORD: password
-      PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-3:5432
+      # PATRONI_POSTGRESQL_CONNECT_ADDRESS: etcd-3:5432
+      PATRONI_POSTGRESQL_CONNECT_ADDRESS: patroni-3:5432
       PATRONI_RESTAPI_CONNECT_ADDRESS: etcd-3:8008
     build:
       dockerfile: ./patroni.Dockerfile

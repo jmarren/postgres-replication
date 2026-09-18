@@ -24,16 +24,17 @@ bootstrap:
     maximum_lag_on_failover: 1048576  # Failover parameters
     postgresql:
         parameters:
-            ssl: 'on'  # Enable SSL
-            ssl_cert_file: /etc/patroni/ssl/server.crt  # PostgreSQL server certificate
-            ssl_key_file: /etc/patroni/ssl/server.key  # PostgreSQL server key
+            ssl: 'off'  # Enable SSL
+            # ssl_cert_file: /etc/patroni/ssl/server.crt  # PostgreSQL server certificate
+            # ssl_key_file: /etc/patroni/ssl/server.key  # PostgreSQL server key
         pg_hba:  # Access rules
-        - hostssl replication replicator 127.0.0.1/32 md5
-        - hostssl replication replicator etcd-1 md5
-        - hostssl replication replicator etcd-2 md5
-        - hostssl replication replicator etcd-3 md5
-        - hostssl all all 127.0.0.1/32 md5
-        - hostssl all all 0.0.0.0/0 md5
+        - host replication replicator 127.0.0.1/32 md5
+        - host replication replicator samenet trust
+        - host replication replicator postgres-replication-patroni-3-1.postgres-replication_backend trust
+        - host replication replicator postgres-replication-patroni-3-2.postgres-replication_backend trust
+        - host replication replicator postgres-replication-patroni-3-3.postgres-replication_backend trust
+        - host all all 127.0.0.1/32 md5
+        - host all all 0.0.0.0/0 md5
   initdb:
     - encoding: UTF8
     - data-checksums
