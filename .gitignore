@@ -8,4 +8,5 @@
 *.key
 *.srl
 *.crt
+*.csr
 

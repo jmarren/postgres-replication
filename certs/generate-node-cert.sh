@@ -11,8 +11,8 @@ req_extensions = v3_req
 [ v3_req ]
 subjectAltName = @alt_names
 [ alt_names ]
-DNS.1 = postgres-1
-DNS.2 = postgres-1.backend
+DNS.1 = etcd-${@}
+DNS.2 = etcd-${@}.backend
 DNS.3 = localhost
 IP.1  = 127.0.0.1
 EOF

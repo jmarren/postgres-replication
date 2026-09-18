@@ -18,12 +18,57 @@ services:
 
   etcd-1:
     image:  gcr.io/etcd-development/etcd:v3.7.0
-    # environment: 
     env_file: ./etcd.env
+    environment:
+      ETCD_NAME: "postgres-1"
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://etcd-1:2380"
+      ETCD_ADVERTISE_CLIENT_URLS: "https://etcd-1:2379"
+      # ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://postgres-1:2380"
+      # ETCD_ADVERTISE_CLIENT_URLS: "https://postgres-1:2379"
     volumes:
       - ./certs/ca.crt:/etc/etcd/ssl/ca.crt
-      - ./certs/etcd-node1.crt:/etc/etcd/ssl/etcd-node1.crt
-      - ./certs/etcd-node1.key:/etc/etcd/ssl/etcd-node1.key
+      - ./certs/etcd-node1.crt:/etc/etcd/ssl/etcd.crt
+      - ./certs/etcd-node1.key:/etc/etcd/ssl/etcd.key
+    networks:
+      - backend
+    ports:
+        - 2379:2379
+
+  etcd-2:
+    image:  gcr.io/etcd-development/etcd:v3.7.0
+    env_file: ./etcd.env
+    environment:
+      ETCD_NAME: "postgres-2"
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://etcd-2:2380"
+      ETCD_ADVERTISE_CLIENT_URLS: "https://etcd-2:2379"
+      # ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://postgres-2:2380"
+      # ETCD_ADVERTISE_CLIENT_URLS: "https://postgres-2:2379"
+    volumes:
+      - ./certs/ca.crt:/etc/etcd/ssl/ca.crt
+      - ./certs/etcd-node2.crt:/etc/etcd/ssl/etcd.crt
+      - ./certs/etcd-node2.key:/etc/etcd/ssl/etcd.key
+    networks:
+      - backend
+
+  etcd-3:
+    image:  gcr.io/etcd-development/etcd:v3.7.0
+    env_file: ./etcd.env
+    environment:
+      ETCD_NAME: "postgres-3"
+      ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://etcd-3:2380"
+      ETCD_ADVERTISE_CLIENT_URLS: "https://etcd-3:2379"
+      # ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://postgres-3:2380"
+      # ETCD_ADVERTISE_CLIENT_URLS: "https://postgres-3:2379"
+    volumes:
+      - ./certs/ca.crt:/etc/etcd/ssl/ca.crt
+      - ./certs/etcd-node3.crt:/etc/etcd/ssl/etcd.crt
+      - ./certs/etcd-node3.key:/etc/etcd/ssl/etcd.key
+    networks:
+      - backend
+
+
+networks:
+  backend:
 
   # /usr/local/bin/etcd \
   # --name s1 \
@@ -42,11 +87,11 @@ services:
     # environment:
       
 
-  etcd-2:
-    image:  gcr.io/etcd-development/etcd:v3.7.0
-
-  etcd-3:
-    image:  gcr.io/etcd-development/etcd:v3.7.0
+  # etcd-2:
+  #   image:  gcr.io/etcd-development/etcd:v3.7.0
+  #
+  # etcd-3:
+  #   image:  gcr.io/etcd-development/etcd:v3.7.0
 
 
       # - ./certs/etcd-node3.key:/etc/etcd/ssl/etcd-node3.ke
