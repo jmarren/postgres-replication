@@ -1,5 +1,10 @@
-# scp ca.crt etcd-node1.crt etcd-node1.key serveradmin@192.168.60.103:/tmp/
+networks:
+  backend:
+    # driver: host
+
 services:
+  # patroni:
+  #   image: patroni 
 
   postgres-1:
     environment:
@@ -32,7 +37,7 @@ services:
     networks:
       - backend
     ports:
-        - 2379:2379
+      - 2381:2381
 
   etcd-2:
     image:  gcr.io/etcd-development/etcd:v3.7.0
@@ -66,9 +71,39 @@ services:
     networks:
       - backend
 
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "9091:9090" # Exposes the Prometheus web UI to http://localhost:9090
+    volumes:
+      # Bind-mount the config file into the container
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml:ro
+      # Named volume to persist data across container restarts
+      # - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    # network_mode: host
+    networks:
+      - backend
 
-networks:
-  backend:
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    # volumes:
+    #   - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin # Change this for production environments
+    # network_mode: host
+    restart: unless-stopped
+    networks:
+      - backend
+
 
   # /usr/local/bin/etcd \
   # --name s1 \
