@@ -1,103 +1,188 @@
-
+# scp ca.crt etcd-node1.crt etcd-node1.key serveradmin@192.168.60.103:/tmp/
 services:
-  primary:
-    image: postgres:18
+
+  postgres-1:
     environment:
       POSTGRES_PASSWORD: password
-    volumes:
-      - pgdata_primary:/var/lib/postgresql/adventureworks 
-      - ./postgresDBSamples/adventureworks/install.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./init.sh:/docker-entrypoint-initdb.d/init.sh
-      - ./postgresDBSamples/adventureworks/data:/data
-      - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
-    command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf"]
-    ports:
-      - 5438:5432
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
-      # test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - backend
-
-
-  replica-1:
     image: postgres:18
+  
+  postgres-2:
     environment:
       POSTGRES_PASSWORD: password
-    volumes:
-      # - pgdata_primary:/var/lib/postgresql/adventureworks 
-      # - ./postgresDBSamples/adventureworks/install.sql:/docker-entrypoint-initdb.d/init.sql
-      # - ./init-replica.sh:/docker-entrypoint-initdb.d/init.sh
-      # - ./postgresDBSamples/adventureworks/data:/data
-      - ./pg_hba-replica.conf:/etc/postgresql/pg_hba.conf
-    command: >
-      bash -c "
-      rm -rf /var/lib/postgresql/18/docker/* &&
-      pg_basebackup -h primary -U repuser -D /var/lib/postgres/18/data -Fp -Xs -R &&
-      chown -R postgres:postgres /var/lib/postgres &&
-      su postgres -c 'pg_ctl -D /var/lib/postgres/18/data start' &&
-      tail -f /dev/null
-      "
+    image: postgres:18
 
-
-    depends_on:
-       primary:
-         condition: service_healthy # Instructs Compose to wait for the healthcheck to pass
-    ports:
-      - 5439:5432
-    networks:
-      - backend
-
-  load-balancer:
-    image: haproxy:3.4.4
-    ports:
-      - 8080:80
-    volumes:
-      - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
-
-
-
-  pgadmin:
-    image: dpage/pgadmin4:9.8
-    ports:
-      - 5050:80
+  postgres-3:
     environment:
-      # Required by pgAdmin
-      PGADMIN_DEFAULT_EMAIL: demo@example.com
-      PGADMIN_DEFAULT_PASSWORD: secret
+      POSTGRES_PASSWORD: password
+    image: postgres:18
 
-      # Don't require the user to login
-      PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_REPLACE_SERVERS_ON_STARTUP: "True" # Forces reload on restart
-      # Don't require a "master" password after logging in
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+  etcd-1:
+    image:  gcr.io/etcd-development/etcd:v3.7.0
+    # environment: 
+    env_file: ./etcd.env
     volumes:
-      - pgadmin-data:/var/lib/pgadmin
-      - ./servers.json:/pgadmin4/servers.json
-    depends_on:
-      - primary
-    networks:
-      - backend
+      - ./certs/ca.crt:/etc/etcd/ssl/ca.crt
+      - ./certs/etcd-node1.crt:/etc/etcd/ssl/etcd-node1.crt
+      - ./certs/etcd-node1.key:/etc/etcd/ssl/etcd-node1.key
 
-networks:
-  backend:
+  # /usr/local/bin/etcd \
+  # --name s1 \
+  # --data-dir /etcd-data \
+  # --listen-client-urls http://0.0.0.0:2379 \
+  # --advertise-client-urls http://0.0.0.0:2379 \
+  # --listen-peer-urls http://0.0.0.0:2380 \
+  # --initial-advertise-peer-urls http://0.0.0.0:2380 \
+  # --initial-cluster s1=http://0.0.0.0:2380 \
+  # --initial-cluster-token tkn \
+  # --initial-cluster-state new \
+  # --log-level info \
+  # --logger zap \
+  # --log-outputs stderr
 
-volumes:
-  pgdata_primary:
-  pgdata:
-  pgadmin-data:
+    # environment:
+      
 
-    # bash -c "rm -rf /var/lib/postgresql/18/docker/* &&
-    #   pg_basebackup -h primary -U repuser -D /var/lib/postgres/18/data -Fp -Xs -R &&
-    #   chown -R postgres:postgres /var/lib/postgres" &&
-    #   exec docker-entrypoint.sh postgres -D /var/lib/postgres/18/data
-    # "
+  etcd-2:
+    image:  gcr.io/etcd-development/etcd:v3.7.0
 
-    # postgres -c hba_file=/etc/postgresql/pg_hba.conf -D /var/lib/postgresql/data
-    # command: ["postgres", "-c", "hba_file=/etc/postgresql/pg_hba.conf", "-D", "/var/lib/postgresql/data" ]
-    #
-    #
-      # &&
+  etcd-3:
+    image:  gcr.io/etcd-development/etcd:v3.7.0
+
+
+      # - ./certs/etcd-node3.key:/etc/etcd/ssl/etcd-node3.ke
+
+  #
+  # postgres-1:
+  #   volumes: 
+  #     - ./certs/ca.crt:/tmp/ca.crt
+  #     - ./certs/etcd-node1.crt:/etc/etcd/ssl/etcd-node1.crt
+  #     - ./certs/etcd-node1.key:/etc/etcd/ssl/etcd-node1.key
+  #   privileged: true   
+  #   environment:
+  #     POSTGRES_PASSWORD: password
+  #   build: 
+  #     context: .
+  #     dockerfile: ./postgres.Dockerfile
+  #     args:
+  #       NODE_ID: 1
+  #
+  # postgres-2:
+  #   volumes:
+  #     - ./certs/ca.crt:/tmp/ca.crt
+  #     - ./certs/etcd-node2.crt:/etc/etcd/ssl/etcd-node2.crt
+  #     - ./certs/etcd-node2.key:/etc/etcd/ssl/etcd-node2.key
+  #   privileged: true   
+  #   environment:
+  #     POSTGRES_PASSWORD: password
+  #   build: 
+  #     context: .
+  #     dockerfile: ./postgres.Dockerfile
+  #     args:
+  #       NODE_ID: 2
+  #
+  # postgres-3:
+  #   volumes:
+  #     - ./certs/ca.crt:/tmp/ca.crt
+  #     - ./certs/etcd-node3.crt:/etc/etcd/ssl/etcd-node3.crt
+  #     - ./certs/etcd-node3.key:/etc/etcd/ssl/etcd-node3.key
+  #   privileged: true   
+  #   environment:
+  #     POSTGRES_PASSWORD: password
+  #   build: 
+  #     context: .
+  #     dockerfile: ./postgres.Dockerfile
+  #     args:
+  #       NODE_ID: 3
+  #
+  #
+#   primary:
+#     image: postgres:18
+#     environment:
+#       POSTGRES_PASSWORD: password
+#     volumes:
+#       - pgdata_primary:/var/lib/postgresql/adventureworks 
+#       - ./postgresDBSamples/adventureworks/install.sql:/docker-entrypoint-initdb.d/init.sql
+#       - ./init.sh:/docker-entrypoint-initdb.d/init.sh
+#       - ./postgresDBSamples/adventureworks/data:/data
+#       - ./pg_hba.conf:/etc/postgresql/pg_hba.conf
+#
+#
+#     command: >
+#       bash -c "
+#       mkdir -p /var/lib/postgres/archive &&
+#       chown -R postgres:postgres /var/lib/postgres &&
+#       exec docker-entrypoint.sh postgres -c hba_file=/etc/postgresql/pg_hba.conf
+#       "
+#     ports:
+#       - 5438:5432
+#     healthcheck:
+#       test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+#     networks:
+#       - backend
+#
+#
+#   replica-1:
+#     image: postgres:18
+#     environment:
+#       POSTGRES_PASSWORD: password
+#       PGDATA: /var/lib/postgres/18/data
+#     volumes:
+#       - ./pg_hba-replica.conf:/etc/postgresql/pg_hba.conf
+#     command: >
+#       bash -c "
+#       rm -rf /var/lib/postgresql/18/docker/* &&
+#       pg_basebackup -h primary -U repuser -D /var/lib/postgres/18/data -Fp -Xs -R &&
+#       chown -R postgres:postgres /var/lib/postgres &&
+#       exec docker-entrypoint.sh postgres -c hba_file=/etc/postgresql/pg_hba.conf
+#       "
+#
+#
+#     depends_on:
+#        primary:
+#          condition: service_healthy # Instructs Compose to wait for the healthcheck to pass
+#     ports:
+#       - 5439:5432
+#     networks:
+#       - backend
+#
+#   load-balancer:
+#     image: haproxy:3.4.4
+#     ports:
+#       - 8080:80
+#     volumes:
+#       - ./haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg
+#
+#
+#
+#   pgadmin:
+#     image: dpage/pgadmin4:9.8
+#     ports:
+#       - 5050:80
+#     environment:
+#       # Required by pgAdmin
+#       PGADMIN_DEFAULT_EMAIL: demo@example.com
+#       PGADMIN_DEFAULT_PASSWORD: secret
+#
+#       # Don't require the user to login
+#       PGADMIN_CONFIG_SERVER_MODE: 'False'
+#       PGADMIN_REPLACE_SERVERS_ON_STARTUP: "True" # Forces reload on restart
+#       # Don't require a "master" password after logging in
+#       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+#     volumes:
+#       - pgadmin-data:/var/lib/pgadmin
+#       - ./servers.json:/pgadmin4/servers.json
+#     depends_on:
+#       - primary
+#     networks:
+#       - backend
+#
+# networks:
+#   backend:
+#
+# volumes:
+#   pgdata_primary:
+#   pgdata:
+#   pgadmin-data:

@@ -8,6 +8,15 @@
       "MaintenanceDB": "Adventureworks",
       "Username": "postgres",
       "SSLMode": "prefer"
+    },
+    "2": {
+      "Name": "Adventureworks",
+      "Group": "Servers",
+      "Host": "replica-1",
+      "Port": 5432,
+      "MaintenanceDB": "Adventureworks",
+      "Username": "postgres",
+      "SSLMode": "prefer"
     }
   }
 }
