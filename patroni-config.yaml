@@ -1,0 +1,94 @@
+scope: postgresql-cluster
+namespace: /service/
+name: postgres-1  # node1
+
+
+      # - ./certs/ca.crt:/etc/etcd/ssl/ca.crt
+      # - ./certs/etcd-node1.crt:/etc/etcd/ssl/etcd.crt
+      # - ./certs/etcd-node1.key:/etc/etcd/ssl/etcd.key
+      # # postgres certs
+      # - ./certs/server.crt:/var/lib/postgresql/ssl/server.crt
+      # - ./certs/server.key:/var/lib/postgresql/ssl/server.key
+      # - ./certs/server.req:/var/lib/postgresql/ssl/server.req
+      # - ./certs/server.pem:/var/lib/postgresql/ssl/server.pem
+  
+  # --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  # --cert=/etc/kubernetes/pki/etcd/healthcheck-client.crt \
+  # --key=/etc/kubernetes/pki/etcd/healthcheck-client.key \
+  #
+  
+etcd3:
+  hosts: 
+    - etcd-1:2379
+    - etcd-2:2379
+    - etcd-3:2379
+  protocol: https
+  cacert: /etc/patroni/ssl/ca.crt
+  cert: /etc/patroni/ssl/etcd.crt  # node1's etcd certificate
+  key: /etc/patroni/ssl/etcd.key  # node1's etcd key
+
+  # hosts: 192.168.60.103:2379,192.168.60.104:2379,192.168.60.105:2379  # etcd cluster nodes
+
+      # - ./certs/ca.crt:/etc/patroni/ssl/ca.crt
+      # - ./certs/etcd-node1.crt:/etc/patroni/ssl/etcd.crt
+      # - ./certs/etcd-node1.key:/etc/patroni/ssl/etcd.key
+      
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: etcd-1:8008  # IP for node1's REST API
+  # certfile: /etc/patroni/ssl/etcd.pem
+  certfile: /etc/patroni/ssl/etcd.crt
+  keyfile: /etc/patroni/ssl/etcd.key
+  cafile: /etc/patroni/ssl/ca.crt
+  # ssl_options:
+  #   certfile: /var/lib/postgresql/ssl/server.pem
+      # - ./certs/server.crt:/etc/patroni/ssl/server.crt
+      # - ./certs/server.key:/etc/patroni/ssl/server.key
+      # - ./certs/server.req:/etc/patroni/ssl/server.req
+      # - ./certs/server.pem:/etc/patroni/ssl/server.pem
+
+
+bootstrap:
+  dcs:
+    ttl: 30
+    loop_wait: 10
+    retry_timeout: 10
+    maximum_lag_on_failover: 1048576  # Failover parameters
+    postgresql:
+        parameters:
+            ssl: 'on'  # Enable SSL
+            # ssl_cert_file: /var/lib/postgresql/ssl/server.crt  # PostgreSQL server certificate
+            # ssl_key_file: /var/lib/postgresql/ssl/server.key  # PostgreSQL server key
+            ssl_cert_file: /etc/patroni/ssl/server.crt  # PostgreSQL server certificate
+            ssl_key_file: /etc/patroni/ssl/server.key  # PostgreSQL server key
+        pg_hba:  # Access rules
+        - hostssl replication replicator 127.0.0.1/32 md5
+        - hostssl replication replicator etcd-1 md5
+        - hostssl replication replicator etcd-2 md5
+        - hostssl replication replicator etcd-3 md5
+        - hostssl all all 127.0.0.1/32 md5
+        - hostssl all all 0.0.0.0/0 md5
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: etcd-1.103:5432  # IP for node1's PostgreSQL
+  data_dir: /var/lib/postgresql/18/docker
+  bin_dir: /usr/local/bin  # Binary directory for PostgreSQL 17
+  authentication:
+    superuser:
+      username: postgres
+      password: password  # Superuser password - be sure to change
+    replication:
+      username: replicator
+      password: password  # Replication password - be sure to change
+  parameters:
+    max_connections: 100
+    shared_buffers: 256MB
+
+tags:
+  nofailover: false
+  noloadbalance: false
+  clonefrom: false

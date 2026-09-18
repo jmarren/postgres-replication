@@ -17,6 +17,7 @@ DNS.3 = localhost
 IP.1  = 127.0.0.1
 EOF
 
+
 # Create a csr
 openssl req -new -key "etcd-node$@.key" -out "etcd-node$@.csr" \
   -subj "/C=US/ST=YourState/L=YourCity/O=YourOrganization/OU=YourUnit/CN=etcd-node$@" \

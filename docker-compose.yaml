@@ -3,23 +3,73 @@ networks:
     # driver: host
 
 services:
-  # patroni:
-  #   image: patroni 
+  patroni:
 
-  postgres-1:
+    volumes:
+      - ./patroni-config.yaml:/etc/patroni/config.yaml
+      # etcd certs
+      - ./certs/ca.crt:/etc/patroni/ssl/ca.crt
+      - ./certs/etcd-node1.crt:/etc/patroni/ssl/etcd.crt
+      # - ./certs/etcd-node1.key:/etc/patroni/ssl/etcd.key
+      - ./certs/etcd-node1.pem:/etc/patroni/ssl/etcd.pem
+      # postgres certs
+      - ./certs/server.crt:/etc/patroni/ssl/server.crt
+      - ./certs/server.key:/etc/patroni/ssl/server.key
+      - ./certs/server.req:/etc/patroni/ssl/server.req
+      - ./certs/server.pem:/etc/patroni/ssl/server.pem
+    ports: 
+      - 5477:5432
     environment:
       POSTGRES_PASSWORD: password
-    image: postgres:18
+      PATRONI_LOG_LEVEL: DEBUG
+    build:
+      dockerfile: ./patroni.Dockerfile
+      args:
+        NODE_ID: 1
+    networks:
+      - backend
+
+
+# COPY --chown=postgres:postgres --chmod=644 ./certs/server.crt /var/lib/postgresql/ssl/server.crt
+# COPY --chown=postgres:postgres --chmod=644 ./certs/server.key /var/lib/postgresql/ssl/server.key
+# COPY --chown=postgres:postgres --chmod=644 ./certs/server.req /var/lib/postgresql/ssl/server.req
+# COPY --chown=postgres:postgres --chmod=644 ./certs/server.pem /var/lib/postgresql/ssl/server.pem
+      # # postgres certs
+      # - ./certs/server.crt:/var/lib/postgresql/ssl/server.crt
+      # - ./certs/server.key:/var/lib/postgresql/ssl/server.key
+      # - ./certs/server.req:/var/lib/postgresql/ssl/server.req
+      # - ./certs/server.pem:/var/lib/postgresql/ssl/server.pem
   
-  postgres-2:
-    environment:
-      POSTGRES_PASSWORD: password
-    image: postgres:18
+  # cacert: /etc/etcd/ssl/ca.crt
+  # cert: /etc/etcd/ssl/etcd-node1.crt  # node1's etcd certificate
+  # key: /etc/etcd/ssl/etcd-node1.key  # node1's etcd key
 
-  postgres-3:
-    environment:
-      POSTGRES_PASSWORD: password
-    image: postgres:18
+  # postgres-1:
+  #   image: postgres:18
+  #   environment:
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - ./certs/server.crt:/var/lib/postgresql/ssl/server.crt
+  #     - ./certs/server.key:/var/lib/postgresql/ssl/server.key
+  #     - ./certs/server.req:/var/lib/postgresql/ssl/server.req
+  #
+  # postgres-2:
+  #   image: postgres:18
+  #   environment:
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - ./certs/server.crt:/var/lib/postgresql/ssl/server.crt
+  #     - ./certs/server.key:/var/lib/postgresql/ssl/server.key
+  #     - ./certs/server.req:/var/lib/postgresql/ssl/server.req
+  #
+  # postgres-3:
+  #   image: postgres:18
+  #   environment:
+  #     POSTGRES_PASSWORD: password
+  #   volumes:
+  #     - ./certs/server.crt:/var/lib/postgresql/ssl/server.crt
+  #     - ./certs/server.key:/var/lib/postgresql/ssl/server.key
+  #     - ./certs/server.req:/var/lib/postgresql/ssl/server.req
 
   etcd-1:
     image:  gcr.io/etcd-development/etcd:v3.7.0
@@ -28,6 +78,7 @@ services:
       ETCD_NAME: "postgres-1"
       ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://etcd-1:2380"
       ETCD_ADVERTISE_CLIENT_URLS: "https://etcd-1:2379"
+      # ALLOW_NONE_AUTHENTICATION: yes
       # ETCD_INITIAL_ADVERTISE_PEER_URLS: "https://postgres-1:2380"
       # ETCD_ADVERTISE_CLIENT_URLS: "https://postgres-1:2379"
     volumes:
@@ -85,6 +136,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.path=/prometheus'
+      - '--log.level=error'
     # network_mode: host
     networks:
       - backend
@@ -97,6 +149,7 @@ services:
     # volumes:
     #   - grafana_data:/var/lib/grafana
     environment:
+      - GF_LOG_LEVEL=error
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin # Change this for production environments
     # network_mode: host
